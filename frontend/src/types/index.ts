@@ -22,3 +22,8 @@ export interface Flashcard {
   order: number;
   created_at: string;
 }
+
+export interface FlashcardDraft {
+  front: string;
+  back: string;
+}

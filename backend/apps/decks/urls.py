@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.decks.views import (
+    BulkCreateFlashcardsView,
     DeckDetailView,
     DeckListCreateView,
     FlashcardCreateView,
@@ -11,5 +12,6 @@ urlpatterns = [
     path("decks/", DeckListCreateView.as_view(), name="deck_list_create"),
     path("decks/<uuid:pk>/", DeckDetailView.as_view(), name="deck_detail"),
     path("decks/<uuid:deck_id>/cards/", FlashcardCreateView.as_view(), name="flashcard_create"),
+    path("decks/<uuid:deck_id>/cards/bulk/", BulkCreateFlashcardsView.as_view(), name="flashcard_bulk_create"),
     path("cards/<uuid:pk>/", FlashcardDetailView.as_view(), name="flashcard_detail"),
 ]

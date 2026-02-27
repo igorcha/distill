@@ -3,11 +3,9 @@ import re
 
 import anthropic
 from django.conf import settings
-from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException
 
 from apps.ai.prompts import FLASHCARD_SYSTEM_PROMPT
-from apps.decks.models import Deck, Flashcard
 
 
 class FlashcardGenerationError(APIException):
@@ -40,9 +38,7 @@ def parse_flashcards_json(raw: str) -> list[dict]:
     raise FlashcardGenerationError("Could not parse flashcards from AI response.")
 
 
-def generate_flashcards(text: str, deck_id: str, user):
-    deck = get_object_or_404(Deck, pk=deck_id, user=user)
-
+def generate_flashcards(text: str) -> list[dict]:
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     message = client.messages.create(
         model=settings.CLAUDE_MODEL,
@@ -52,18 +48,4 @@ def generate_flashcards(text: str, deck_id: str, user):
     )
 
     raw = message.content[0].text
-    cards_data = parse_flashcards_json(raw)
-
-    existing_count = deck.flashcards.count()
-    flashcards = []
-    for i, card in enumerate(cards_data):
-        flashcards.append(
-            Flashcard(
-                deck=deck,
-                front=card["front"],
-                back=card["back"],
-                order=existing_count + i,
-            )
-        )
-
-    return Flashcard.objects.bulk_create(flashcards)
+    return parse_flashcards_json(raw)

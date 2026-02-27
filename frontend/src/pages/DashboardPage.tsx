@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, BookOpen, Sparkles } from "lucide-react";
-import { createDeck, deleteDeck, getDecks } from "@/api/decks";
+import { useDecks, useCreateDeck, useDeleteDeck } from "@/hooks/useDecks";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,19 +55,14 @@ function SkeletonCard() {
 
 function DeckCard({ deck }: { deck: Deck }) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const deleteM = useMutation({
-    mutationFn: () => deleteDeck(deck.id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["decks"] }),
-  });
+  const deleteM = useDeleteDeck();
 
   return (
     <div className="group rounded-xl border border-[#2a2f42] bg-[#1a1f2e] p-5 flex flex-col">
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-base font-semibold text-white">{deck.title}</h3>
         <button
-          onClick={() => deleteM.mutate()}
+          onClick={() => deleteM.mutate(deck.id)}
           disabled={deleteM.isPending}
           className="shrink-0 rounded-md p-1.5 text-[#8b92a5] opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100 cursor-pointer"
         >
@@ -124,8 +118,7 @@ function CreateDeckDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const createM = useCreateDeck();
 
   const {
     register,
@@ -134,18 +127,11 @@ function CreateDeckDialog({
     formState: { isSubmitting },
   } = useForm<CreateDeckForm>({ defaultValues: { title: "", description: "" } });
 
-  const createM = useMutation({
-    mutationFn: (data: CreateDeckForm) =>
-      createDeck(data.title, data.description),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ["decks"] });
-      reset();
-      onOpenChange(false);
-      navigate(`/generate?deck=${res.data.id}`);
-    },
-  });
-
-  const onSubmit = (data: CreateDeckForm) => createM.mutateAsync(data);
+  const onSubmit = async (data: CreateDeckForm) => {
+    await createM.mutateAsync(data);
+    reset();
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -196,13 +182,7 @@ function CreateDeckDialog({
 
 export default function DashboardPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  const { data, isLoading } = useQuery<{ data: Deck[] }>({
-    queryKey: ["decks"],
-    queryFn: getDecks,
-  });
-
-  const decks = data?.data ?? [];
+  const { data: decks = [], isLoading } = useDecks();
 
   return (
     <div className="min-h-screen bg-[#0f1117]">
