@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, BookOpen, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { useDecks, useCreateDeck, useDeleteDeck } from "@/hooks/useDecks";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -58,16 +59,22 @@ function DeckCard({ deck }: { deck: Deck }) {
   const deleteM = useDeleteDeck();
 
   return (
-    <div className="group rounded-xl border border-[#2a2f42] bg-[#1a1f2e] p-5 flex flex-col">
+    <div
+      onClick={() => navigate(`/decks/${deck.id}`)}
+      className="group rounded-xl border border-[#2a2f42] bg-[#1a1f2e] p-5 flex flex-col cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-[#3B5BDB]/50 hover:bg-[#1e2438] hover:shadow-[0_4px_24px_rgba(59,91,219,0.15)]"
+    >
       <div className="flex items-start justify-between gap-2">
-        <h3
-          onClick={() => navigate(`/decks/${deck.id}`)}
-          className="text-base font-semibold text-white hover:text-[#3B5BDB] transition-colors cursor-pointer"
-        >
+        <h3 className="text-base font-semibold text-white group-hover:text-[#3B5BDB] transition-colors">
           {deck.title}
         </h3>
         <button
-          onClick={() => deleteM.mutate(deck.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteM.mutate(deck.id, {
+              onSuccess: () => toast.success("Deck deleted."),
+              onError: () => toast.error("Failed to delete deck. Please try again."),
+            });
+          }}
           disabled={deleteM.isPending}
           className="shrink-0 rounded-md p-1.5 text-[#8b92a5] opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100 cursor-pointer"
         >
@@ -96,7 +103,10 @@ function DeckCard({ deck }: { deck: Deck }) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate(`/study/${deck.id}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/study/${deck.id}`);
+          }}
           className="flex-1 border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white cursor-pointer"
         >
           <BookOpen className="size-3.5" />
@@ -105,13 +115,30 @@ function DeckCard({ deck }: { deck: Deck }) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate(`/generate?deck=${deck.id}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/generate?deck=${deck.id}`);
+          }}
           className="flex-1 border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white cursor-pointer"
         >
           <Sparkles className="size-3.5" />
           Generate
         </Button>
       </div>
+    </div>
+  );
+}
+
+function AddDeckCard({ onClick }: { onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      className="group flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#2a2f42] bg-[#1a1f2e] p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-solid hover:border-[#3B5BDB] hover:bg-[#1e2438] hover:shadow-[0_4px_24px_rgba(59,91,219,0.15)]"
+    >
+      <Plus className="size-8 text-[#555b6e] transition-colors group-hover:text-[#3B5BDB]" />
+      <p className="text-sm text-[#555b6e] transition-colors group-hover:text-[#3B5BDB]">
+        New Deck
+      </p>
     </div>
   );
 }
@@ -138,8 +165,13 @@ function CreateDeckDialog({
     onOpenChange(false);
   };
 
+  function handleClose(open: boolean) {
+    if (!open) reset();
+    onOpenChange(open);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="bg-[#1a1f2e] border-[#2a2f42] text-white sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white">Create New Deck</DialogTitle>
@@ -166,7 +198,7 @@ function CreateDeckDialog({
             <Button
               type="button"
               variant="ghost"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleClose(false)}
               className="text-[#8b92a5] hover:text-white hover:bg-[#2a2f42] cursor-pointer"
             >
               Cancel
@@ -196,10 +228,10 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Your Library</h1>
-            <p className="mt-1 text-[#8b92a5]">
+            <h1 className="text-4xl font-bold text-white">Your Library</h1>
+            <p className="mt-1.5 text-lg text-[#8b92a5]">
               Harness your knowledge with{" "}
-              <span className="font-semibold text-[#3B5BDB]">
+              <span className="font-bold text-[#3B5BDB]">
                 {decks.length}
               </span>{" "}
               active decks.
@@ -207,7 +239,7 @@ export default function DashboardPage() {
           </div>
           <Button
             onClick={() => setDialogOpen(true)}
-            className="bg-[#3B5BDB] hover:bg-[#2645c7] text-white shrink-0 cursor-pointer"
+            className="h-11 px-6 bg-[#3B5BDB] hover:bg-[#2645c7] text-white font-medium shrink-0 cursor-pointer shadow-[0_0_20px_rgba(59,91,219,0.4)]"
           >
             <Plus className="size-4" />
             Create New Deck
@@ -238,6 +270,7 @@ export default function DashboardPage() {
               {decks.map((deck) => (
                 <DeckCard key={deck.id} deck={deck} />
               ))}
+              <AddDeckCard onClick={() => setDialogOpen(true)} />
             </div>
           )}
         </div>

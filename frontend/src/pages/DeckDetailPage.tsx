@@ -425,7 +425,7 @@ export default function DeckDetailPage() {
                 className="border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white cursor-pointer"
               >
                 <Sparkles className="size-4" />
-                Regenerate
+                Generate
               </Button>
               <Button
                 onClick={() => navigate(`/study/${deckId}`)}
@@ -481,11 +481,10 @@ export default function DeckDetailPage() {
                       setDateFilter(f);
                       setPage(1);
                     }}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                      dateFilter === f
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${dateFilter === f
                         ? "bg-[#3B5BDB]/15 text-[#3B5BDB]"
                         : "text-[#8b92a5] hover:text-white"
-                    }`}
+                      }`}
                   >
                     {f}
                   </button>
@@ -495,11 +494,10 @@ export default function DeckDetailPage() {
 
             {/* Bulk actions bar — overlays the toolbar */}
             <div
-              className={`absolute inset-0 flex items-center gap-3 rounded-t-xl bg-[#1a1f2e] px-5 transition-all duration-200 ${
-                selected.size > 0
+              className={`absolute inset-0 flex items-center gap-3 rounded-t-xl bg-[#1a1f2e] px-5 transition-all duration-200 ${selected.size > 0
                   ? "opacity-100 pointer-events-auto"
                   : "opacity-0 pointer-events-none"
-              }`}
+                }`}
             >
               <span className="text-xs font-medium text-[#3B5BDB]">
                 {selected.size} selected
@@ -605,11 +603,10 @@ export default function DeckDetailPage() {
                     <button
                       key={n}
                       onClick={() => setPage(n)}
-                      className={`size-7 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                        n === safePage
+                      className={`size-7 rounded-md text-xs font-medium transition-colors cursor-pointer ${n === safePage
                           ? "bg-[#3B5BDB] text-white"
                           : "text-[#8b92a5] hover:text-white"
-                      }`}
+                        }`}
                     >
                       {n}
                     </button>

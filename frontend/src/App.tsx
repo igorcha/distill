@@ -6,6 +6,7 @@ import AuthPage from "@/pages/AuthPage";
 import DashboardPage from "@/pages/DashboardPage";
 import DeckDetailPage from "@/pages/DeckDetailPage";
 import GeneratePage from "@/pages/GeneratePage";
+import StudyPage from "@/pages/StudyPage";
 import { Toaster } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient();
@@ -53,7 +54,7 @@ function AppRoutes() {
         path="/study/:deckId"
         element={
           <ProtectedRoute>
-            <div>Study</div>
+            <StudyPage />
           </ProtectedRoute>
         }
       />
