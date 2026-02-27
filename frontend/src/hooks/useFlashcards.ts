@@ -3,6 +3,7 @@ import {
   bulkCreateFlashcards,
   deleteFlashcard,
   generateFlashcards,
+  updateFlashcard,
 } from "@/api/flashcards";
 import { QUERY_KEYS } from "@/hooks/queryKeys";
 import type { FlashcardDraft } from "@/types";
@@ -37,6 +38,24 @@ export function useDeleteFlashcard(deckId: string) {
     mutationFn: (id: string) => deleteFlashcard(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(deckId) });
+    },
+  });
+}
+
+export function useUpdateFlashcard(deckId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { front?: string; back?: string };
+    }) => updateFlashcard(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(deckId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.decks });
     },
   });
 }

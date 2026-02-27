@@ -1,21 +1,31 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  ArrowLeft,
+  ArrowRight,
   BookOpen,
   ChevronLeft,
   ChevronRight,
   Layers,
+  Loader2,
   Search,
   Sparkles,
   Star,
   Trash2,
   Zap,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useDeck } from "@/hooks/useDecks";
-import { useDeleteFlashcard } from "@/hooks/useFlashcards";
+import { useDeleteFlashcard, useUpdateFlashcard } from "@/hooks/useFlashcards";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Flashcard } from "@/types";
 
 const PAGE_SIZE = 10;
@@ -121,6 +131,177 @@ function TableSkeleton() {
   );
 }
 
+function FlipCardTextarea({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChange(e.target.value);
+      const el = e.target;
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    },
+    [onChange]
+  );
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={handleChange}
+      rows={3}
+      className={`w-full resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-[#555b6e] ${className}`}
+    />
+  );
+}
+
+function CardEditModal({
+  card,
+  onClose,
+  deckId,
+}: {
+  card: Flashcard;
+  onClose: () => void;
+  deckId: string;
+}) {
+  const [editFront, setEditFront] = useState(card.front);
+  const [editBack, setEditBack] = useState(card.back);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const updateM = useUpdateFlashcard(deckId);
+
+  function handleSave() {
+    updateM.mutate(
+      { id: card.id, data: { front: editFront, back: editBack } },
+      {
+        onSuccess: () => {
+          toast.success("Card updated.");
+          onClose();
+        },
+        onError: () => {
+          toast.error("Failed to update card.");
+        },
+      }
+    );
+  }
+
+  const hasChanges = editFront !== card.front || editBack !== card.back;
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        showCloseButton={false}
+        className="bg-[#1a1f2e] border-[#2a2f42] sm:max-w-2xl p-8"
+      >
+        <DialogTitle className="sr-only">Edit Flashcard</DialogTitle>
+        <DialogDescription className="sr-only">
+          Edit the front and back of your flashcard
+        </DialogDescription>
+
+        {/* 3D Flip Card */}
+        <div
+          className="mx-auto w-full max-w-[580px]"
+          style={{ perspective: "1000px" }}
+        >
+          <motion.div
+            className="relative h-[340px] w-full"
+            style={{ transformStyle: "preserve-3d" }}
+            animate={{ rotateY: isFlipped ? 180 : 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+          >
+            {/* Front Side */}
+            <div
+              className="absolute inset-0 flex flex-col rounded-xl border border-[#2a2f42] bg-[#0f1117] p-5"
+              style={{ backfaceVisibility: "hidden" }}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#555b6e]">
+                Front &middot; Question
+              </p>
+              <div className="mt-3 flex-1 overflow-y-auto">
+                <FlipCardTextarea
+                  value={editFront}
+                  onChange={setEditFront}
+                  className="text-white"
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setIsFlipped(true)}
+                  className="flex items-center gap-1 text-xs text-[#555b6e] transition-colors hover:text-[#8b92a5] cursor-pointer"
+                >
+                  Flip to Back
+                  <ArrowRight className="size-3" />
+                </button>
+              </div>
+            </div>
+
+            {/* Back Side */}
+            <div
+              className="absolute inset-0 flex flex-col rounded-xl border border-[#2a2f42] bg-[#0f1117] p-5"
+              style={{
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
+              }}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#555b6e]">
+                Back &middot; Answer
+              </p>
+              <div className="mt-3 flex-1 overflow-y-auto">
+                <FlipCardTextarea
+                  value={editBack}
+                  onChange={setEditBack}
+                  className="text-[#8b92a5]"
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setIsFlipped(false)}
+                  className="flex items-center gap-1 text-xs text-[#555b6e] transition-colors hover:text-[#8b92a5] cursor-pointer"
+                >
+                  <ArrowLeft className="size-3" />
+                  Flip to Front
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="mt-2 flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white cursor-pointer"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={updateM.isPending || !hasChanges}
+            className="bg-[#3B5BDB] hover:bg-[#2645c7] text-white cursor-pointer disabled:opacity-50"
+          >
+            {updateM.isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function DeckDetailPage() {
   const { deckId } = useParams<{ deckId: string }>();
   const navigate = useNavigate();
@@ -131,6 +312,7 @@ export default function DeckDetailPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("All");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedCard, setSelectedCard] = useState<Flashcard | null>(null);
 
   const allCards = deck?.flashcards ?? [];
   const newCardsCount = useMemo(
@@ -275,44 +457,50 @@ export default function DeckDetailPage() {
         {/* Table section */}
         <div className="mt-8 rounded-xl border border-[#2a2f42] bg-[#1a1f2e]">
           {/* Toolbar */}
-          <div className="flex flex-col gap-3 border-b border-[#2a2f42] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#555b6e]" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search cards..."
-                className="h-9 w-full rounded-lg border border-[#2a2f42] bg-[#0f1117] pl-9 pr-3 text-sm text-white placeholder:text-[#555b6e] outline-none transition-colors focus:border-[#3B5BDB]"
-              />
-            </div>
-
-            <div className="flex items-center gap-1">
-              {DATE_FILTERS.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => {
-                    setDateFilter(f);
+          <div className="relative border-b border-[#2a2f42]">
+            <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#555b6e]" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                    dateFilter === f
-                      ? "bg-[#3B5BDB]/15 text-[#3B5BDB]"
-                      : "text-[#8b92a5] hover:text-white"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
+                  placeholder="Search cards..."
+                  className="h-9 w-full rounded-lg border border-[#2a2f42] bg-[#0f1117] pl-9 pr-3 text-sm text-white placeholder:text-[#555b6e] outline-none transition-colors focus:border-[#3B5BDB]"
+                />
+              </div>
 
-          {/* Bulk actions bar */}
-          {selected.size > 0 && (
-            <div className="flex items-center gap-3 border-b border-[#2a2f42] bg-[#3B5BDB]/5 px-5 py-2.5">
+              <div className="flex items-center gap-1">
+                {DATE_FILTERS.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => {
+                      setDateFilter(f);
+                      setPage(1);
+                    }}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                      dateFilter === f
+                        ? "bg-[#3B5BDB]/15 text-[#3B5BDB]"
+                        : "text-[#8b92a5] hover:text-white"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bulk actions bar — overlays the toolbar */}
+            <div
+              className={`absolute inset-0 flex items-center gap-3 rounded-t-xl bg-[#1a1f2e] px-5 transition-all duration-200 ${
+                selected.size > 0
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+              }`}
+            >
               <span className="text-xs font-medium text-[#3B5BDB]">
                 {selected.size} selected
               </span>
@@ -324,7 +512,7 @@ export default function DeckDetailPage() {
                 Delete Selected
               </button>
             </div>
-          )}
+          </div>
 
           {/* Table */}
           {isLoading ? (
@@ -340,7 +528,7 @@ export default function DeckDetailPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#2a2f42] text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-[#555b6e]">
+                  <tr className="border-b-2 border-[#2a2f42] text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-[#555b6e]">
                     <th className="w-10 py-3 pl-5 pr-2">
                       <input
                         type="checkbox"
@@ -349,7 +537,7 @@ export default function DeckDetailPage() {
                         className="size-3.5 cursor-pointer accent-[#3B5BDB]"
                       />
                     </th>
-                    <th className="px-3 py-3">Front Text</th>
+                    <th className="w-[35%] px-3 py-3">Front Text</th>
                     <th className="px-3 py-3">Back Text</th>
                     <th className="px-3 py-3 w-28">Created</th>
                     <th className="w-16 py-3 pr-5 text-right">Actions</th>
@@ -359,28 +547,33 @@ export default function DeckDetailPage() {
                   {pageCards.map((card) => (
                     <tr
                       key={card.id}
-                      className="border-b border-[#2a2f42]/50 transition-colors hover:bg-[#0f1117]/50"
+                      onClick={() => setSelectedCard(card)}
+                      className="border-b border-[#2a2f42]/50 border-l-2 border-l-transparent transition-all hover:border-l-[#3B5BDB] hover:bg-[#1a1f2e] cursor-pointer"
                     >
-                      <td className="py-3 pl-5 pr-2">
+                      <td className="py-4 pl-5 pr-2">
                         <input
                           type="checkbox"
                           checked={selected.has(card.id)}
                           onChange={() => toggleSelect(card.id)}
+                          onClick={(e) => e.stopPropagation()}
                           className="size-3.5 cursor-pointer accent-[#3B5BDB]"
                         />
                       </td>
-                      <td className="px-3 py-3 text-white">
+                      <td className="w-[35%] px-3 py-4 font-medium text-white">
                         {truncate(card.front, 40)}
                       </td>
-                      <td className="px-3 py-3 text-[#8b92a5]">
+                      <td className="px-3 py-4 text-[#8b92a5]">
                         {truncate(card.back, 40)}
                       </td>
-                      <td className="px-3 py-3 text-[#555b6e]">
+                      <td className="px-3 py-4 text-[#555b6e]">
                         {formatDate(card.created_at)}
                       </td>
-                      <td className="py-3 pr-5 text-right">
+                      <td className="py-4 pr-5 text-right">
                         <button
-                          onClick={() => handleDelete(card.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(card.id);
+                          }}
                           className="rounded-md p-1.5 text-[#555b6e] transition-colors hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
                         >
                           <Trash2 className="size-3.5" />
@@ -434,6 +627,15 @@ export default function DeckDetailPage() {
           )}
         </div>
       </main>
+
+      {selectedCard && (
+        <CardEditModal
+          key={selectedCard.id}
+          card={selectedCard}
+          deckId={deckId!}
+          onClose={() => setSelectedCard(null)}
+        />
+      )}
     </div>
   );
 }

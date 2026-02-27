@@ -15,3 +15,10 @@ export function bulkCreateFlashcards(
 export function deleteFlashcard(id: string) {
   return client.delete(`/cards/${id}/`);
 }
+
+export function updateFlashcard(
+  id: string,
+  data: { front?: string; back?: string }
+) {
+  return client.patch(`/cards/${id}/`, data);
+}
