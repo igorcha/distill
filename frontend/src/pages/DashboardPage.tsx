@@ -125,6 +125,7 @@ function CreateDeckDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -136,10 +137,11 @@ function CreateDeckDialog({
   const createM = useMutation({
     mutationFn: (data: CreateDeckForm) =>
       createDeck(data.title, data.description),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["decks"] });
       reset();
       onOpenChange(false);
+      navigate(`/generate?deck=${res.data.id}`);
     },
   });
 
