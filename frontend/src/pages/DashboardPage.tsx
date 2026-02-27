@@ -60,7 +60,12 @@ function DeckCard({ deck }: { deck: Deck }) {
   return (
     <div className="group rounded-xl border border-[#2a2f42] bg-[#1a1f2e] p-5 flex flex-col">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-base font-semibold text-white">{deck.title}</h3>
+        <h3
+          onClick={() => navigate(`/decks/${deck.id}`)}
+          className="text-base font-semibold text-white hover:text-[#3B5BDB] transition-colors cursor-pointer"
+        >
+          {deck.title}
+        </h3>
         <button
           onClick={() => deleteM.mutate(deck.id)}
           disabled={deleteM.isPending}

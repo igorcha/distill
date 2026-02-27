@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createDeck, deleteDeck, getDecks } from "@/api/decks";
+import { createDeck, deleteDeck, getDeck, getDecks } from "@/api/decks";
 import { QUERY_KEYS } from "@/hooks/queryKeys";
-import type { Deck } from "@/types";
+import type { Deck, Flashcard } from "@/types";
 
 export function useDecks() {
   return useQuery({
@@ -34,5 +34,13 @@ export function useDeleteDeck() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.decks });
     },
+  });
+}
+
+export function useDeck(deckId: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.deck(deckId),
+    queryFn: () => getDeck(deckId),
+    select: (res): Deck & { flashcards: Flashcard[] } => res.data,
   });
 }

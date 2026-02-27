@@ -11,3 +11,7 @@ export function bulkCreateFlashcards(
 ) {
   return client.post(`/decks/${deckId}/cards/bulk/`, { flashcards });
 }
+
+export function deleteFlashcard(id: string) {
+  return client.delete(`/cards/${id}/`);
+}

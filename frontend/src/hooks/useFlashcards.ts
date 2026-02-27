@@ -1,5 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { bulkCreateFlashcards, generateFlashcards } from "@/api/flashcards";
+import {
+  bulkCreateFlashcards,
+  deleteFlashcard,
+  generateFlashcards,
+} from "@/api/flashcards";
 import { QUERY_KEYS } from "@/hooks/queryKeys";
 import type { FlashcardDraft } from "@/types";
 
@@ -22,6 +26,17 @@ export function useBulkCreateFlashcards() {
     }) => bulkCreateFlashcards(deckId, flashcards),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.decks });
+    },
+  });
+}
+
+export function useDeleteFlashcard(deckId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteFlashcard(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(deckId) });
     },
   });
 }

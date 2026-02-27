@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthPage from "@/pages/AuthPage";
 import DashboardPage from "@/pages/DashboardPage";
+import DeckDetailPage from "@/pages/DeckDetailPage";
 import GeneratePage from "@/pages/GeneratePage";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -29,6 +30,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/decks/:deckId"
+        element={
+          <ProtectedRoute>
+            <DeckDetailPage />
           </ProtectedRoute>
         }
       />
