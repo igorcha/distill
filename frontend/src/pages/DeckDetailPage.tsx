@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   BookOpen,
   ChevronLeft,
   ChevronRight,
@@ -158,7 +160,7 @@ function FlipCardTextarea({
       value={value}
       onChange={handleChange}
       rows={3}
-      className={`w-full resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-[#555b6e] ${className}`}
+      className={`w-full resize-none bg-transparent text-lg leading-relaxed outline-none placeholder:text-[#555b6e] ${className}`}
     />
   );
 }
@@ -313,6 +315,7 @@ export default function DeckDetailPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedCard, setSelectedCard] = useState<Flashcard | null>(null);
+  const [dateSortDir, setDateSortDir] = useState<"asc" | "desc">("desc");
 
   const allCards = deck?.flashcards ?? [];
   const newCardsCount = useMemo(
@@ -330,8 +333,12 @@ export default function DeckDetailPage() {
           c.back.toLowerCase().includes(q)
       );
     }
+    result = [...result].sort((a, b) => {
+      const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      return dateSortDir === "asc" ? diff : -diff;
+    });
     return result;
-  }, [allCards, dateFilter, search]);
+  }, [allCards, dateFilter, search, dateSortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -482,8 +489,8 @@ export default function DeckDetailPage() {
                       setPage(1);
                     }}
                     className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${dateFilter === f
-                        ? "bg-[#3B5BDB]/15 text-[#3B5BDB]"
-                        : "text-[#8b92a5] hover:text-white"
+                      ? "bg-[#3B5BDB]/15 text-[#3B5BDB]"
+                      : "text-[#8b92a5] hover:text-white"
                       }`}
                   >
                     {f}
@@ -495,8 +502,8 @@ export default function DeckDetailPage() {
             {/* Bulk actions bar — overlays the toolbar */}
             <div
               className={`absolute inset-0 flex items-center gap-3 rounded-t-xl bg-[#1a1f2e] px-5 transition-all duration-200 ${selected.size > 0
-                  ? "opacity-100 pointer-events-auto"
-                  : "opacity-0 pointer-events-none"
+                ? "opacity-100 pointer-events-auto"
+                : "opacity-0 pointer-events-none"
                 }`}
             >
               <span className="text-xs font-medium text-[#3B5BDB]">
@@ -524,9 +531,9 @@ export default function DeckDetailPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-[13px]">
                 <thead>
-                  <tr className="border-b-2 border-[#2a2f42] text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-[#555b6e]">
+                  <tr className="border-b-2 border-[#2a2f42] text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#555b6e]">
                     <th className="w-10 py-3 pl-5 pr-2">
                       <input
                         type="checkbox"
@@ -537,7 +544,19 @@ export default function DeckDetailPage() {
                     </th>
                     <th className="w-[35%] px-3 py-3">Front Text</th>
                     <th className="px-3 py-3">Back Text</th>
-                    <th className="px-3 py-3 w-28">Created</th>
+                    <th className="px-3 py-3 w-28">
+                      <button
+                        onClick={() => setDateSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                        className="flex items-center gap-1 cursor-pointer hover:text-[#8b92a5] transition-colors"
+                      >
+                        CREATED
+                        {dateSortDir === "desc" ? (
+                          <ArrowDown className="size-3" />
+                        ) : (
+                          <ArrowUp className="size-3" />
+                        )}
+                      </button>
+                    </th>
                     <th className="w-16 py-3 pr-5 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -604,8 +623,8 @@ export default function DeckDetailPage() {
                       key={n}
                       onClick={() => setPage(n)}
                       className={`size-7 rounded-md text-xs font-medium transition-colors cursor-pointer ${n === safePage
-                          ? "bg-[#3B5BDB] text-white"
-                          : "text-[#8b92a5] hover:text-white"
+                        ? "bg-[#3B5BDB] text-white"
+                        : "text-[#8b92a5] hover:text-white"
                         }`}
                     >
                       {n}

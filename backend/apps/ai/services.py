@@ -42,6 +42,13 @@ def parse_flashcards_json(raw: str) -> list[dict]:
     raise FlashcardGenerationError("Could not parse flashcards from AI response.")
 
 
+def suggest_content_start(pages: list[str]) -> int:
+    for i, page in enumerate(pages):
+        if len(page.split()) > 100:
+            return i + 1
+    return 1
+
+
 def extract_pdf_text(file) -> dict:
     reader = PdfReader(file)
     total_pages = len(reader.pages)
@@ -52,6 +59,7 @@ def extract_pdf_text(file) -> dict:
         raw = reader.pages[i].extract_text() or ""
         cleaned = re.sub(r"\n{3,}", "\n\n", raw).strip()
         cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+        cleaned = re.sub(r"[\x00-\x08\x0B\x0E-\x1F\x7F]", "", cleaned)
         pages.append(cleaned)
 
     return {
@@ -59,6 +67,7 @@ def extract_pdf_text(file) -> dict:
         "extracted_pages": pages_to_extract,
         "pages": pages,
         "truncated": total_pages > PDF_MAX_PAGES,
+        "suggested_start_page": suggest_content_start(pages),
     }
 
 
