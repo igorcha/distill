@@ -1,7 +1,8 @@
 from django.urls import path
 
-from apps.ai.views import GenerateFlashcardsView
+from apps.ai.views import ExtractPDFView, GenerateFlashcardsView
 
 urlpatterns = [
     path("generate/", GenerateFlashcardsView.as_view(), name="generate_flashcards"),
+    path("extract/pdf/", ExtractPDFView.as_view(), name="extract_pdf"),
 ]
