@@ -55,6 +55,11 @@ class BulkCreateFlashcardsView(APIView):
                 {"flashcards": ["This field is required and must not be empty."]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if len(flashcards_data) > 100:
+            return Response(
+                {"flashcards": ["Cannot create more than 100 flashcards at once."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         existing_count = deck.flashcards.count()
         flashcards = Flashcard.objects.bulk_create([

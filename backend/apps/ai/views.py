@@ -1,12 +1,19 @@
 import logging
 
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
 from apps.ai.serializers import GenerateSerializer
-from apps.ai.services import PDF_MAX_FILE_SIZE_MB, extract_pdf_text, generate_flashcards
+from apps.ai.services import (
+    PDF_MAX_FILE_SIZE_MB,
+    extract_pdf_text,
+    extract_youtube_transcript,
+    generate_flashcards,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,5 +59,47 @@ class ExtractPDFView(APIView):
             logger.exception("PDF extraction failed")
             return Response(
                 {"detail": "Failed to extract PDF. The file may be corrupted."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class ExtractYouTubeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        url = (request.data.get("url") or "").strip()
+        if not url:
+            return Response(
+                {"detail": "No YouTube URL provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        start_seconds = int(request.data.get("start_seconds", 0))
+        end_seconds = request.data.get("end_seconds")
+        if end_seconds is not None:
+            end_seconds = int(end_seconds)
+
+        try:
+            result = extract_youtube_transcript(url, start_seconds, end_seconds)
+            return Response(result)
+        except TranscriptsDisabled:
+            return Response(
+                {"detail": "This video has transcripts disabled."},
+                status=422,
+            )
+        except NoTranscriptFound:
+            return Response(
+                {"detail": "No transcript found. The video may not have captions available."},
+                status=422,
+            )
+        except ValidationError as e:
+            return Response(
+                {"detail": e.detail[0]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception:
+            logger.exception("YouTube transcript extraction failed")
+            return Response(
+                {"detail": "Failed to extract transcript. Please try again."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

@@ -21,6 +21,9 @@ RULES:
 - For relationships: "What is the relationship between X and Y?" → clear explanation
 - For facts/numbers: test the specific fact directly
 - Avoid cards that are too broad or require essay-length answers
+- Generate a maximum of 50 cards regardless of content length — 
+  prioritize the most important concepts if content is very long
+
 
 Return ONLY a valid JSON array. No markdown, no explanation, no other text.
 Format: [{"front": "question", "back": "answer"}, ...]"""
