@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -42,3 +42,19 @@ class MeView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = request.user.profile
+        credits_limit = 10 if profile.tier == "free" else 200
+        return Response(
+            {
+                "tier": profile.tier,
+                "monthly_credits_used": profile.monthly_credits_used,
+                "last_reset": profile.last_reset,
+                "credits_limit": credits_limit,
+            }
+        )

@@ -1,8 +1,16 @@
 import client from "./client";
 import type { FlashcardDraft } from "@/types";
 
-export function generateFlashcards(text: string) {
-  return client.post<FlashcardDraft[]>("/generate/", { text });
+type GenerateInputType = "text" | "pdf" | "youtube";
+
+export function generateFlashcards(
+  text: string,
+  inputType: GenerateInputType = "text"
+) {
+  return client.post<FlashcardDraft[]>("/generate/", {
+    text,
+    input_type: inputType,
+  });
 }
 
 export function bulkCreateFlashcards(

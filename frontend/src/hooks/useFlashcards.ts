@@ -10,7 +10,13 @@ import type { FlashcardDraft } from "@/types";
 
 export function useGenerateFlashcards() {
   return useMutation({
-    mutationFn: ({ text }: { text: string }) => generateFlashcards(text),
+    mutationFn: ({
+      text,
+      input_type = "text",
+    }: {
+      text: string;
+      input_type?: "text" | "pdf" | "youtube";
+    }) => generateFlashcards(text, input_type),
   });
 }
 

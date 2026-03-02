@@ -5,6 +5,16 @@ import { Plus, Trash2, BookOpen, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useDecks, useCreateDeck, useDeleteDeck } from "@/hooks/useDecks";
 import Navbar from "@/components/Navbar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -54,78 +64,109 @@ function SkeletonCard() {
   );
 }
 
+// Deck deletion gets a confirmation dialog because it's a single click that
+// cascades to all cards. Individual card deletion (on DeckDetailPage) doesn't
+// need one — selecting and removing a single card already implies clear intent.
 function DeckCard({ deck }: { deck: Deck }) {
   const navigate = useNavigate();
   const deleteM = useDeleteDeck();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
-    <div
-      onClick={() => navigate(`/decks/${deck.id}`)}
-      className="group rounded-xl border border-[#2a2f42] bg-[#1a1f2e] p-5 flex flex-col cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-[#3B5BDB]/50 hover:bg-[#1e2438] hover:shadow-[0_4px_24px_rgba(59,91,219,0.15)]"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-base font-semibold text-white group-hover:text-[#3B5BDB] transition-colors">
-          {deck.title}
-        </h3>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            deleteM.mutate(deck.id, {
-              onSuccess: () => toast.success("Deck deleted."),
-              onError: () => toast.error("Failed to delete deck. Please try again."),
-            });
-          }}
-          disabled={deleteM.isPending}
-          className="shrink-0 rounded-md p-1.5 text-[#8b92a5] opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100 cursor-pointer"
-        >
-          <Trash2 className="size-4" />
-        </button>
-      </div>
-
-      <Badge
-        variant="secondary"
-        className="mt-2 w-fit bg-[#2a2f42] text-[#8b92a5] border-none text-xs"
+    <>
+      <div
+        onClick={() => navigate(`/decks/${deck.id}`)}
+        className="group rounded-xl border border-[#2a2f42] bg-[#1a1f2e] p-5 flex flex-col cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-[#3B5BDB]/50 hover:bg-[#1e2438] hover:shadow-[0_4px_24px_rgba(59,91,219,0.15)]"
       >
-        {deck.flashcard_count} cards
-      </Badge>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-base font-semibold text-white group-hover:text-[#3B5BDB] transition-colors">
+            {deck.title}
+          </h3>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmOpen(true);
+            }}
+            disabled={deleteM.isPending}
+            className="shrink-0 rounded-md p-1.5 text-[#8b92a5] opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100 cursor-pointer"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        </div>
 
-      {deck.description && (
-        <p className="mt-3 text-sm text-[#8b92a5] line-clamp-2">
-          {deck.description}
+        <Badge
+          variant="secondary"
+          className="mt-2 w-fit bg-[#2a2f42] text-[#8b92a5] border-none text-xs"
+        >
+          {deck.flashcard_count} cards
+        </Badge>
+
+        {deck.description && (
+          <p className="mt-3 text-sm text-[#8b92a5] line-clamp-2">
+            {deck.description}
+          </p>
+        )}
+
+        <p className="mt-3 text-xs text-[#555b6e]">
+          {formatDate(deck.created_at)}
         </p>
-      )}
 
-      <p className="mt-3 text-xs text-[#555b6e]">
-        {formatDate(deck.created_at)}
-      </p>
-
-      <div className="mt-auto pt-4 flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/study/${deck.id}`);
-          }}
-          className="flex-1 border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white cursor-pointer"
-        >
-          <BookOpen className="size-3.5" />
-          Study Now
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/generate?deck=${deck.id}`);
-          }}
-          className="flex-1 border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white cursor-pointer"
-        >
-          <Sparkles className="size-3.5" />
-          Generate
-        </Button>
+        <div className="mt-auto pt-4 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/study/${deck.id}`);
+            }}
+            className="flex-1 border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white cursor-pointer"
+          >
+            <BookOpen className="size-3.5" />
+            Study Now
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/generate?deck=${deck.id}`);
+            }}
+            className="flex-1 border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white cursor-pointer"
+          >
+            <Sparkles className="size-3.5" />
+            Generate
+          </Button>
+        </div>
       </div>
-    </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="bg-[#1a1f2e] border-[#2a2f42] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this deck?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#8b92a5]">
+              This will permanently delete <span className="font-medium text-white">{deck.title}</span> and
+              all its cards. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[#2a2f42] bg-transparent text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteM.mutate(deck.id, {
+                  onSuccess: () => toast.success("Deck deleted."),
+                  onError: () => toast.error("Failed to delete deck. Please try again."),
+                });
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Delete Deck
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

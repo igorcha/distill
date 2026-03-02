@@ -265,6 +265,7 @@ export default function GeneratePage() {
   const { mutate: bulkCreate, isPending: isSaving } =
     useBulkCreateFlashcards();
 
+  //This only handles text and pdfs, youtube has its own dedicated generate method since it's more complex 
   const handleGenerate = () => {
     if (!selectedDeckId) {
       setDeckError(true);
@@ -272,14 +273,15 @@ export default function GeneratePage() {
     }
     setDeckError(false);
     generate(
-      { text },
+      { text, input_type: 'text' },
       {
         onSuccess: (res) => {
           setGeneratedCards(res.data);
           toast.success(`${res.data.length} flashcards generated!`);
         },
-        onError: () => {
-          toast.error("Failed to generate flashcards. Please try again.");
+        onError: (err: unknown) => {
+          const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+          toast.error(detail || "Failed to generate flashcards. Please try again.");
         },
       }
     );
@@ -321,6 +323,8 @@ export default function GeneratePage() {
   const handleClear = () => {
     setText("");
     setGeneratedCards([]);
+    resetPdfState();
+    resetYoutubeState();
   };
 
   const resetYoutubeState = () => {
@@ -415,15 +419,16 @@ export default function GeneratePage() {
         // Segmented videos intentionally keep all YouTube state after
         // generation so the user can tweak the time range and re-generate.
         generate(
-          { text: fetchedText },
+          { text: fetchedText, input_type: "youtube" },
           {
             onSuccess: (genRes) => {
               setGeneratedCards(genRes.data);
               toast.success(`${genRes.data.length} flashcards generated!`);
             },
-            onError: () => {
+            onError: (err: unknown) => {
+              const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
               toast.error(
-                "Failed to generate flashcards. Please try again."
+                detail || "Failed to generate flashcards. Please try again."
               );
             },
             onSettled: () => setIsYtGenerating(false),
@@ -435,7 +440,7 @@ export default function GeneratePage() {
         const message = Array.isArray(raw) ? raw[0] : raw;
         toast.error(
           (typeof message === "string" && message) ||
-            "Failed to extract segment. Please try again."
+          "Failed to extract segment. Please try again."
         );
         setIsYtGenerating(false);
       }
@@ -458,7 +463,7 @@ export default function GeneratePage() {
     setIsYtGenerating(true);
     const isShortVideo = !ytNeedsSegmentation;
     generate(
-      { text: textToUse },
+      { text: textToUse, input_type: "youtube" },
       {
         onSuccess: (res) => {
           setGeneratedCards(res.data);
@@ -471,8 +476,9 @@ export default function GeneratePage() {
             resetYoutubeState();
           }
         },
-        onError: () => {
-          toast.error("Failed to generate flashcards. Please try again.");
+        onError: (err: unknown) => {
+          const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+          toast.error(detail || "Failed to generate flashcards. Please try again.");
         },
         onSettled: () => setIsYtGenerating(false),
       }

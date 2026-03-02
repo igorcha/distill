@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import * as authApi from "@/api/auth";
 import { setAccessToken } from "@/api/client";
 import type { User } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextType {
   user: User | null;
@@ -32,8 +33,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [tokenState, setTokenState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const clearAuth = () => {
+    queryClient.clear()
     localStorage.removeItem("refresh_token");
     setAccessToken(null);
     setTokenState(null);

@@ -36,3 +36,26 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class UserProfile(models.Model):
+    TIER_FREE = "free"
+    TIER_PRO = "pro"
+    TIER_CHOICES = (
+        (TIER_FREE, "Free"),
+        (TIER_PRO, "Pro"),
+    )
+
+    user = models.OneToOneField(
+        User,
+        related_name="profile",
+        on_delete=models.CASCADE,
+    )
+    tier = models.CharField(max_length=10, choices=TIER_CHOICES, default=TIER_FREE)
+    monthly_credits_used = models.IntegerField(default=0)
+    last_reset = models.DateField(auto_now_add=True)
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    subscription_id = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.email} — {self.tier}"

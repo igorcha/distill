@@ -1,11 +1,12 @@
 import json
 import re
+from datetime import date
 from urllib.parse import parse_qs, urlparse
 
 import anthropic
 from django.conf import settings
 from pypdf import PdfReader
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
@@ -16,10 +17,34 @@ PDF_MAX_FILE_SIZE_MB = 20
 YOUTUBE_MAX_DURATION_SECONDS = 18000
 YOUTUBE_MAX_SEGMENT_CHARS = 50000
 
+CREDIT_COSTS = {"text": 1, "pdf": 1, "youtube": 3}
+MONTHLY_LIMITS = {"free": 10, "pro": 200}
+
 
 class FlashcardGenerationError(APIException):
     status_code = 502
     default_detail = "Failed to generate flashcards. Please try again."
+
+
+def reset_credits_if_needed(profile) -> None:
+    today = date.today()
+    if (
+        profile.last_reset.month != today.month
+        or profile.last_reset.year != today.year
+    ):
+        profile.monthly_credits_used = 0
+        profile.last_reset = today
+        profile.save()
+
+
+def check_and_deduct_credits(profile, input_type: str) -> None:
+    reset_credits_if_needed(profile)
+    cost = CREDIT_COSTS[input_type]
+    limit = MONTHLY_LIMITS[profile.tier]
+    if profile.monthly_credits_used + cost > limit:
+        raise PermissionDenied("Monthly credit limit reached.")
+    profile.monthly_credits_used += cost
+    profile.save()
 
 
 def parse_flashcards_json(raw: str) -> list[dict]:

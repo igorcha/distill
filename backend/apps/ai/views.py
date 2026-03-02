@@ -10,6 +10,7 @@ from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisable
 from apps.ai.serializers import GenerateSerializer
 from apps.ai.services import (
     PDF_MAX_FILE_SIZE_MB,
+    check_and_deduct_credits,
     extract_pdf_text,
     extract_youtube_transcript,
     generate_flashcards,
@@ -19,9 +20,16 @@ logger = logging.getLogger(__name__)
 
 
 class GenerateFlashcardsView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         serializer = GenerateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        profile = request.user.profile
+        check_and_deduct_credits(profile, serializer.validated_data["input_type"])
+        print(profile.monthly_credits_used)
+        print(serializer.validated_data["input_type"])
+        print(request.user.profile)
 
         cards_data = generate_flashcards(text=serializer.validated_data["text"])
 
