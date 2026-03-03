@@ -67,14 +67,35 @@ function AutoResizeTextarea({
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
+  const expand = useCallback((el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  const collapse = useCallback((el: HTMLTextAreaElement) => {
+    el.style.height = "";
+  }, []);
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onChange(e.target.value);
-      const el = e.target;
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
+      expand(e.target);
     },
-    [onChange]
+    [onChange, expand]
+  );
+
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      expand(e.target);
+    },
+    [expand]
+  );
+
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      collapse(e.target);
+    },
+    [collapse]
   );
 
   return (
@@ -82,6 +103,8 @@ function AutoResizeTextarea({
       ref={ref}
       value={value}
       onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       rows={1}
       className={`w-full resize-none overflow-hidden border border-transparent bg-transparent text-sm outline-none transition-colors focus:border-[#2a2f42] focus:bg-[#151926] rounded-md px-2 py-1 -mx-2 -my-1 ${className}`}
     />
@@ -369,13 +392,12 @@ export default function GeneratePage() {
           `Transcript loaded · ${formatDuration(d.total_duration_seconds)}`
         );
       } else {
-        // Default to full duration so user must actively choose a segment
-        // rather than silently getting a partial transcript
-        setYtEndSeconds(d.total_duration_seconds);
+        // Use backend-recommended default segment range.
+        setYtEndSeconds(d.end_seconds);
         setYtText("");
         setYtCharCount(0);
         toast.success(
-          `Video is ${formatDuration(d.total_duration_seconds)} — select a time range`
+          `Video is ${formatDuration(d.total_duration_seconds)} — recommended range pre-selected`
         );
       }
     } catch (err: unknown) {
@@ -513,8 +535,9 @@ export default function GeneratePage() {
       if (emptyCount > pages.length * 0.2) {
         toast.warning("Many pages appear to have no text — this PDF may be scanned or image-based.");
       }
-    } catch {
-      toast.error("Failed to extract PDF. The file may be corrupted or image-only.");
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail || "Failed to extract PDF. The file may be corrupted or image-only.");
     } finally {
       setIsPdfUploading(false);
     }

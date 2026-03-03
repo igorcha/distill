@@ -1,11 +1,13 @@
 import logging
 
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
+from youtube_transcript_api._errors import NoTranscriptFound, RequestBlocked, TranscriptsDisabled
 
 from apps.ai.serializers import GenerateSerializer
 from apps.ai.services import (
@@ -27,9 +29,6 @@ class GenerateFlashcardsView(APIView):
         serializer.is_valid(raise_exception=True)
         profile = request.user.profile
         check_and_deduct_credits(profile, serializer.validated_data["input_type"])
-        print(profile.monthly_credits_used)
-        print(serializer.validated_data["input_type"])
-        print(request.user.profile)
 
         cards_data = generate_flashcards(text=serializer.validated_data["text"])
 
@@ -39,6 +38,7 @@ class GenerateFlashcardsView(APIView):
 class ExtractPDFView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='user', rate='20/h', method='POST', block=True))
     def post(self, request):
         file = request.FILES.get("pdf")
         if not file:
@@ -74,6 +74,7 @@ class ExtractPDFView(APIView):
 class ExtractYouTubeView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='user', rate='10/h', method='POST', block=True))
     def post(self, request):
         url = (request.data.get("url") or "").strip()
         if not url:
@@ -99,6 +100,12 @@ class ExtractYouTubeView(APIView):
             return Response(
                 {"detail": "No transcript found. The video may not have captions available."},
                 status=422,
+            )
+        except RequestBlocked:
+            logger.warning("YouTube request blocked during transcript extraction")
+            return Response(
+                {"detail": "YouTube transcript extraction is temporarily unavailable. Please try again later."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         except ValidationError as e:
             return Response(

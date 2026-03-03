@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework_simplejwt",
+    "django_ratelimit",
+    "django_redis",
     "apps.users",
     "apps.decks",
     "apps.ai",
@@ -85,6 +87,17 @@ WSGI_APPLICATION = "distill.wsgi.application"
 
 DATABASES = {
     "default": env.db("DATABASE_URL"),
+}
+
+# Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": env("REDIS_URL", default="redis://127.0.0.1:6379/1"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    },
 }
 
 
@@ -139,6 +152,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "EXCEPTION_HANDLER": "distill.exceptions.api_exception_handler",
 }
 
 # Simple JWT

@@ -16,6 +16,7 @@ PDF_MAX_PAGES = 200
 PDF_MAX_FILE_SIZE_MB = 20
 YOUTUBE_MAX_DURATION_SECONDS = 18000
 YOUTUBE_MAX_SEGMENT_CHARS = 50000
+YOUTUBE_DEFAULT_SEGMENT_CHARS = 40000
 
 CREDIT_COSTS = {"text": 1, "pdf": 1, "youtube": 3}
 MONTHLY_LIMITS = {"free": 10, "pro": 200}
@@ -150,8 +151,8 @@ def extract_youtube_transcript(
 
     For segmented videos the default end_seconds is calculated by
     walking the transcript chunks until cumulative text length first
-    exceeds YOUTUBE_MAX_SEGMENT_CHARS, giving the frontend a sensible
-    initial range that fits within the limit.
+    exceeds YOUTUBE_DEFAULT_SEGMENT_CHARS, giving the frontend a
+    conservative initial range that fits well within the hard limit.
 
     Raises ValidationError for invalid URLs, videos over 5 hours,
     or segments exceeding YOUTUBE_MAX_SEGMENT_CHARS.
@@ -198,7 +199,7 @@ def extract_youtube_transcript(
     cumulative_len = 0
     for chunk in transcript:
         cumulative_len += len(chunk.text) + 1  # +1 for joining space
-        if cumulative_len > YOUTUBE_MAX_SEGMENT_CHARS:
+        if cumulative_len > YOUTUBE_DEFAULT_SEGMENT_CHARS:
             default_end = round(chunk.start)
             break
 
