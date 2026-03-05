@@ -27,3 +27,10 @@ export interface FlashcardDraft {
   front: string;
   back: string;
 }
+
+export interface Profile {
+  tier: "free" | "pro";
+  monthly_credits_used: number;
+  last_reset: string;
+  credits_limit: number;
+}

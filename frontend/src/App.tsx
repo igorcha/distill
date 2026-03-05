@@ -6,6 +6,7 @@ import AuthPage from "@/pages/AuthPage";
 import DashboardPage from "@/pages/DashboardPage";
 import DeckDetailPage from "@/pages/DeckDetailPage";
 import GeneratePage from "@/pages/GeneratePage";
+import SettingsPage from "@/pages/SettingsPage";
 import StudyPage from "@/pages/StudyPage";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -55,6 +56,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <StudyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />

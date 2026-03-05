@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Diamond, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Diamond, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMe } from "@/hooks/useProfile";
 
 const navLinks = [
   { label: "My Decks", to: "/dashboard" },
@@ -9,8 +10,10 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { data: user } = useMe();
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +78,16 @@ export default function Navbar() {
 
         {menuOpen && (
           <div className="absolute right-0 top-full mt-2 w-40 rounded-lg border border-[#2a2f42] bg-[#1a1f2e] py-1 shadow-xl">
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                navigate("/settings");
+              }}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white transition-colors cursor-pointer"
+            >
+              <Settings className="size-4" />
+              Settings
+            </button>
             <button
               onClick={() => {
                 setMenuOpen(false);

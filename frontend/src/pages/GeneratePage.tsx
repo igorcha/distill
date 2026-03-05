@@ -21,6 +21,7 @@ import {
   useBulkCreateFlashcards,
 } from "@/hooks/useFlashcards";
 import Navbar from "@/components/Navbar";
+import UpgradeModal from "@/components/UpgradeModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RangeSlider } from "@/components/ui/range-slider";
@@ -209,6 +210,7 @@ export default function GeneratePage() {
   );
   const [generatedCards, setGeneratedCards] = useState<FlashcardDraft[]>([]);
   const [deckError, setDeckError] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   // PDF state — initialized from module-level store so it survives navigation
   const saved = getPdfStore();
@@ -303,8 +305,12 @@ export default function GeneratePage() {
           toast.success(`${res.data.length} flashcards generated!`);
         },
         onError: (err: unknown) => {
-          const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-          toast.error(detail || "Failed to generate flashcards. Please try again.");
+          const resp = (err as { response?: { status?: number; data?: { detail?: string } } })?.response;
+          if (resp?.status === 403) {
+            setUpgradeModalOpen(true);
+            return;
+          }
+          toast.error(resp?.data?.detail || "Failed to generate flashcards. Please try again.");
         },
       }
     );
@@ -448,10 +454,12 @@ export default function GeneratePage() {
               toast.success(`${genRes.data.length} flashcards generated!`);
             },
             onError: (err: unknown) => {
-              const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-              toast.error(
-                detail || "Failed to generate flashcards. Please try again."
-              );
+              const resp = (err as { response?: { status?: number; data?: { detail?: string } } })?.response;
+              if (resp?.status === 403) {
+                setUpgradeModalOpen(true);
+                return;
+              }
+              toast.error(resp?.data?.detail || "Failed to generate flashcards. Please try again.");
             },
             onSettled: () => setIsYtGenerating(false),
           }
@@ -499,8 +507,12 @@ export default function GeneratePage() {
           }
         },
         onError: (err: unknown) => {
-          const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-          toast.error(detail || "Failed to generate flashcards. Please try again.");
+          const resp = (err as { response?: { status?: number; data?: { detail?: string } } })?.response;
+          if (resp?.status === 403) {
+            setUpgradeModalOpen(true);
+            return;
+          }
+          toast.error(resp?.data?.detail || "Failed to generate flashcards. Please try again.");
         },
         onSettled: () => setIsYtGenerating(false),
       }
@@ -1231,6 +1243,7 @@ export default function GeneratePage() {
           </div>
         </div>
       </div>
+      <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} />
     </div>
   );
 }

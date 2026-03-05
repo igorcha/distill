@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.serializers import LoginSerializer, RegisterSerializer, UserSerializer
+from apps.users.serializers import LoginSerializer, RegisterSerializer, UpdateUserSerializer, UserSerializer
 from apps.users.services import get_tokens_for_user
 
 
@@ -39,9 +39,17 @@ class LoginView(APIView):
 
 
 class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = UpdateUserSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(request.user).data)
 
 
 class ProfileView(APIView):
