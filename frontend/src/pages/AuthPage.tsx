@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Diamond, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,15 @@ function LoginTab() {
         </div>
 
         <div>
-          <label className={labelStyles}>Password</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className={`${labelStyles} mb-0`}>Password</label>
+            <Link
+              to="/forgot-password"
+              className="text-[11px] font-medium text-[#3B5BDB] hover:text-[#2645c7] transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <PasswordInput
             placeholder="Enter your password"
             className={inputStyles}
@@ -224,6 +232,8 @@ function RegisterTab() {
 
 export default function AuthPage() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") === "register" ? "register" : "login";
 
   if (isLoading) {
     return null;
@@ -253,7 +263,7 @@ export default function AuthPage() {
 
       <div className="flex w-full lg:w-[60%] justify-center bg-[#0f1117] px-6 pt-[25vh]">
         <div className="w-full max-w-[400px]">
-          <Tabs defaultValue="login">
+          <Tabs defaultValue={defaultTab}>
             <TabsList className="w-full bg-[#1a1f2e] h-11 rounded-lg p-1 mb-8">
               <TabsTrigger
                 value="login"

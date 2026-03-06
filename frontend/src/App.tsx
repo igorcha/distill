@@ -1,32 +1,29 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthPage from "@/pages/AuthPage";
+import ContactPage from "@/pages/ContactPage";
 import DashboardPage from "@/pages/DashboardPage";
 import DeckDetailPage from "@/pages/DeckDetailPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import GeneratePage from "@/pages/GeneratePage";
+import LandingPage from "@/pages/LandingPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import SettingsPage from "@/pages/SettingsPage";
 import StudyPage from "@/pages/StudyPage";
 import { Toaster } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient();
 
-function RootRedirect() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return null;
-  }
-
-  return <Navigate to={isAuthenticated ? "/dashboard" : "/auth"} replace />;
-}
-
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<RootRedirect />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/dashboard"
         element={

@@ -18,10 +18,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.users.views import ContactView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("apps.users.urls")),
     path("api/", include("apps.decks.urls")),
     path("api/", include("apps.ai.urls")),
     path("api/billing/", include("apps.billing.urls")),
+    path("api/contact/", ContactView.as_view(), name="contact"),
 ]

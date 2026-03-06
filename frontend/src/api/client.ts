@@ -24,7 +24,11 @@ client.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const url = originalRequest.url || "";
+    const isAuthEndpoint =
+      url.includes("/auth/login") || url.includes("/auth/register");
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem("refresh_token");

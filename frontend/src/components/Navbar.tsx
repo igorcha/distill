@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Diamond, LogOut, Settings } from "lucide-react";
+import { Diamond, LogOut, MessageSquare, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMe } from "@/hooks/useProfile";
 
@@ -87,6 +87,16 @@ export default function Navbar() {
             >
               <Settings className="size-4" />
               Settings
+            </button>
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                navigate("/contact");
+              }}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#8b92a5] hover:bg-[#2a2f42] hover:text-white transition-colors cursor-pointer"
+            >
+              <MessageSquare className="size-4" />
+              Contact
             </button>
             <button
               onClick={() => {

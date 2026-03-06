@@ -26,3 +26,11 @@ export function refreshToken() {
 export function getMe() {
   return client.get("/auth/me/");
 }
+
+export function forgotPassword(email: string) {
+  return client.post("/auth/forgot-password/", { email });
+}
+
+export function resetPassword(uid: string, token: string, new_password: string) {
+  return client.post("/auth/reset-password/", { uid, token, new_password });
+}
