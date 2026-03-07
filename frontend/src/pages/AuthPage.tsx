@@ -246,10 +246,10 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-screen">
       <div className="hidden lg:flex lg:w-[40%] bg-gradient-to-b from-[#3B5BDB] to-[#2645c7] flex-col justify-between p-10">
-        <div className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center gap-2.5">
           <Diamond className="size-7 text-white" />
           <span className="text-xl font-bold text-white">Distill</span>
-        </div>
+        </Link>
         <div className="space-y-4">
           <h1 className="text-4xl font-bold leading-tight text-white">
             Master any subject with AI-powered study decks.

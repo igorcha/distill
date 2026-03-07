@@ -131,7 +131,7 @@ function LandingNavbar({ authed }: { authed: boolean }) {
 
 function Hero({ authed }: { authed: boolean }) {
   return (
-    <section className="relative pt-36 pb-20 px-6 overflow-hidden">
+    <section className="relative pt-36 pb-10 px-6 overflow-hidden">
       {/* Radial glow */}
       <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(59,91,219,0.15)_0%,transparent_70%)]" />
 
@@ -215,7 +215,7 @@ const features = [
 
 function Features() {
   return (
-    <section id="features" className="py-24 px-6">
+    <section id="features" className="pt-14 pb-24 px-6">
       <div className="mx-auto max-w-6xl">
         <FadeUp>
           <div className="text-center mb-14">
@@ -258,7 +258,7 @@ function Features() {
 
 const steps = [
   { number: 1, title: "Add your source", description: "Paste text, upload a PDF, or provide a YouTube link." },
-  { number: 2, title: "AI generates cards", description: "Claude reads your content and creates flashcard pairs." },
+  { number: 2, title: "AI generates cards", description: "AI reads your content and creates flashcard pairs." },
   { number: 3, title: "Study and retain", description: "Review your deck with an interactive flip-card interface." },
 ];
 

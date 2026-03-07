@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createDeck, deleteDeck, getDeck, getDecks } from "@/api/decks";
 import { QUERY_KEYS } from "@/hooks/queryKeys";
@@ -14,14 +13,12 @@ export function useDecks() {
 
 export function useCreateDeck() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: ({ title, description }: { title: string; description: string }) =>
       createDeck(title, description),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.decks });
-      navigate(`/generate?deck=${res.data.id}`);
     },
   });
 }

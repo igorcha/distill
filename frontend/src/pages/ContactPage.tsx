@@ -52,11 +52,11 @@ export default function ContactPage() {
       <main className="mx-auto max-w-2xl px-6 py-10">
         {!isAuthenticated && (
           <Link
-            to="/auth"
+            to="/"
             className="inline-flex items-center gap-1.5 text-sm text-[#3B5BDB] hover:text-[#2645c7] transition-colors mb-6"
           >
             <ArrowLeft className="size-4" />
-            Back to login
+            Back to home
           </Link>
         )}
 

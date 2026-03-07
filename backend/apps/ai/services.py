@@ -17,6 +17,7 @@ PDF_MAX_FILE_SIZE_MB = 20
 YOUTUBE_MAX_DURATION_SECONDS = 18000
 YOUTUBE_MAX_SEGMENT_CHARS = 50000
 YOUTUBE_DEFAULT_SEGMENT_CHARS = 40000
+MAX_TOKENS = 4096
 
 CREDIT_COSTS = {"text": 1, "pdf": 1, "youtube": 3}
 MONTHLY_LIMITS = {"free": 10, "pro": 200}
@@ -238,7 +239,7 @@ def generate_flashcards(text: str) -> list[dict]:
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     message = client.messages.create(
         model=settings.CLAUDE_MODEL,
-        max_tokens=8192,
+        max_tokens=MAX_TOKENS,
         system=FLASHCARD_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": f"Create comprehensive flashcards from this content:\n\n{text}"}],
     )
