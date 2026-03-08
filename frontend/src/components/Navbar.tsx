@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Diamond, LogOut, MessageSquare, Settings } from "lucide-react";
+import { LogOut, MessageSquare, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMe } from "@/hooks/useProfile";
+import logo from "@/assets/logo.svg";
 
 const navLinks = [
   { label: "My Decks", to: "/dashboard" },
@@ -37,7 +38,7 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-[#2a2f42] bg-[#0f1117] px-6">
       <Link to="/dashboard" className="flex items-center gap-2.5">
-        <Diamond className="size-5 text-white" />
+        <img src={logo} width={20} height={20} alt="Distill" />
         <span className="text-lg font-bold text-white">Distill</span>
       </Link>
 

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Diamond, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -247,7 +248,7 @@ export default function AuthPage() {
     <div className="flex min-h-screen">
       <div className="hidden lg:flex lg:w-[40%] bg-gradient-to-b from-[#3B5BDB] to-[#2645c7] flex-col justify-between p-10">
         <Link to="/" className="flex items-center gap-2.5">
-          <Diamond className="size-7 text-white" />
+          <img src={logo} width={28} height={28} alt="Distill" />
           <span className="text-xl font-bold text-white">Distill</span>
         </Link>
         <div className="space-y-4">

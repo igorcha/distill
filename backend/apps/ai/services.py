@@ -1,13 +1,15 @@
 import json
 import re
 from datetime import date
+from time import sleep
+from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
 
 import anthropic
+import requests
 from django.conf import settings
 from pypdf import PdfReader
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
-from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
 from apps.ai.prompts import FLASHCARD_SYSTEM_PROMPT
@@ -18,6 +20,11 @@ YOUTUBE_MAX_DURATION_SECONDS = 18000
 YOUTUBE_MAX_SEGMENT_CHARS = 50000
 YOUTUBE_DEFAULT_SEGMENT_CHARS = 40000
 MAX_TOKENS = 4096
+SUPADATA_TRANSCRIPT_URL = "https://api.supadata.ai/v1/youtube/transcript"
+SUPADATA_JOB_URL = "https://api.supadata.ai/v1/transcript"
+SUPADATA_POLL_MAX_ATTEMPTS = 60
+SUPADATA_POLL_INTERVAL_SECONDS = 1
+SUPADATA_REQUEST_TIMEOUT_SECONDS = 30
 
 CREDIT_COSTS = {"text": 1, "pdf": 1, "youtube": 3}
 MONTHLY_LIMITS = {"free": 10, "pro": 200}
@@ -138,6 +145,131 @@ def aggregate_chunks_by_minute(transcript) -> list[dict]:
     ]
 
 
+def _get_supadata_error_message(payload: object, fallback: str) -> str:
+    if isinstance(payload, dict):
+        detail = payload.get("message") or payload.get("detail") or payload.get("details")
+        if isinstance(detail, str) and detail:
+            return detail
+    return fallback
+
+
+def _get_supadata_error_code(payload: object) -> str | None:
+    if isinstance(payload, dict):
+        code = payload.get("error") or payload.get("code")
+        if isinstance(code, str) and code:
+            return code.lower()
+    return None
+
+
+def _raise_supadata_http_error(response: requests.Response) -> None:
+    payload: object = {}
+    try:
+        payload = response.json()
+    except ValueError:
+        pass
+
+    detail = _get_supadata_error_message(
+        payload, f"Supadata request failed with status {response.status_code}."
+    )
+    error_code = _get_supadata_error_code(payload)
+
+    if response.status_code in (206, 404) or error_code in {
+        "not-found",
+        "transcript-unavailable",
+    }:
+        raise NoTranscriptFound(detail)
+    if response.status_code == 403 or error_code == "forbidden":
+        raise TranscriptsDisabled(detail)
+    if response.status_code == 400:
+        raise ValidationError("Could not extract a transcript from that YouTube URL. Check that the video exists and has captions available.")
+    if 400 <= response.status_code < 500:
+        raise ValidationError(detail)
+    response.raise_for_status()
+
+
+def _raise_supadata_job_error(error: object) -> None:
+    if isinstance(error, dict):
+        detail = _get_supadata_error_message(error, json.dumps(error))
+        error_code = _get_supadata_error_code(error)
+        if error_code in {"not-found", "transcript-unavailable"}:
+            raise NoTranscriptFound(detail)
+        if error_code == "forbidden":
+            raise TranscriptsDisabled(detail)
+        raise ValidationError(detail)
+
+    raise ValidationError(str(error or "Transcript job failed."))
+
+
+def _extract_supadata_result(payload: dict) -> dict:
+    result = payload.get("result")
+    if isinstance(result, dict):
+        return result
+    return payload
+
+
+def _normalize_supadata_chunks(payload: dict) -> list[SimpleNamespace]:
+    result = _extract_supadata_result(payload)
+    chunks = result.get("content")
+    if not isinstance(chunks, list):
+        raise ValidationError("Unexpected transcript response format.")
+
+    transcript = [
+        SimpleNamespace(
+            text=chunk.get("text", ""),
+            start=(chunk.get("offset", 0) or 0) / 1000,
+            duration=(chunk.get("duration", 0) or 0) / 1000,
+        )
+        for chunk in chunks
+    ]
+    if not transcript:
+        raise NoTranscriptFound("No transcript found.")
+    return transcript
+
+
+def _poll_supadata_job(job_id: str) -> dict:
+    headers = {"x-api-key": settings.SUPADATA_API_KEY}
+
+    for attempt in range(SUPADATA_POLL_MAX_ATTEMPTS):
+        response = requests.get(
+            f"{SUPADATA_JOB_URL}/{job_id}",
+            headers=headers,
+            timeout=SUPADATA_REQUEST_TIMEOUT_SECONDS,
+        )
+        _raise_supadata_http_error(response)
+        payload = response.json()
+        status = payload.get("status")
+
+        if status == "completed":
+            return payload
+        if status == "failed":
+            _raise_supadata_job_error(payload.get("error"))
+
+        if attempt < SUPADATA_POLL_MAX_ATTEMPTS - 1:
+            sleep(SUPADATA_POLL_INTERVAL_SECONDS)
+
+    raise ValidationError("Transcript extraction timed out. Please try again.")
+
+
+def _fetch_supadata_transcript(url: str) -> list[SimpleNamespace]:
+    headers = {"x-api-key": settings.SUPADATA_API_KEY}
+    response = requests.get(
+        SUPADATA_TRANSCRIPT_URL,
+        params={"url": url, "text": "false"},
+        headers=headers,
+        timeout=SUPADATA_REQUEST_TIMEOUT_SECONDS,
+    )
+
+    if response.status_code == 202:
+        payload = response.json()
+        job_id = payload.get("id") or payload.get("jobId")
+        if not job_id:
+            raise ValidationError("Transcript job did not return an id.")
+        return _normalize_supadata_chunks(_poll_supadata_job(job_id))
+
+    _raise_supadata_http_error(response)
+    return _normalize_supadata_chunks(response.json())
+
+
 def extract_youtube_transcript(
     url: str, start_seconds: int = 0, end_seconds: int | None = None
 ) -> dict:
@@ -163,8 +295,7 @@ def extract_youtube_transcript(
     if not video_id:
         raise ValidationError("Invalid YouTube URL.")
 
-    ytt = YouTubeTranscriptApi()
-    transcript = ytt.fetch(video_id)
+    transcript = _fetch_supadata_transcript(url)
 
     last = transcript[-1]
     total_duration_seconds = last.start + last.duration
