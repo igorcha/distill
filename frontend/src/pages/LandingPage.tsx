@@ -540,34 +540,6 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Social */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#555b6e] mb-4">
-              Social
-            </h4>
-            <ul className="space-y-2.5">
-              <li>
-                <a
-                  href="https://twitter.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-[#8b92a5] hover:text-white transition-colors"
-                >
-                  Twitter
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://github.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-[#8b92a5] hover:text-white transition-colors"
-                >
-                  GitHub
-                </a>
-              </li>
-            </ul>
-          </div>
         </div>
 
         <div className="border-t border-[#2a2f42] pt-6 text-center">
